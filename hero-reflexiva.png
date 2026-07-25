@@ -1,0 +1,30 @@
+ANAMNESE H.E.R.O. PREMIUM - NETLIFY
+
+Arquivos principais:
+- index.html
+- assets/hero-reflexiva.png
+- netlify.toml
+- netlify/functions/generate-diagnosis.mjs
+
+Como subir:
+1. Envie esta pasta para a Netlify ou arraste o ZIP final no painel da Netlify.
+2. Em Site configuration > Environment variables, adicione:
+   OPENAI_API_KEY = sua chave da OpenAI
+3. Opcionalmente, adicione:
+   OPENAI_MODEL = gpt-5.5
+4. Faça redeploy depois de salvar as variáveis.
+
+Como funciona:
+- O questionário roda no navegador.
+- As fotos são comprimidas antes de ir para a IA.
+- Ao finalizar o questionário, as respostas são enviadas para marcosestevees@icloud.com via FormSubmit.
+- O botão "Gerar Diagnóstico Inteligente" chama:
+  /.netlify/functions/generate-diagnosis
+- A função chama a OpenAI pelo servidor, sem expor a chave no HTML.
+- O diagnóstico volta diferente e personalizado conforme respostas e fotos.
+
+Observações:
+- Sem OPENAI_API_KEY configurada, a página mostra aviso de IA não conectada.
+- O envio para o e-mail marcosestevees@icloud.com continua configurado no formulário.
+- No primeiro uso do FormSubmit, pode ser necessário confirmar o e-mail destinatário.
+- O FormSubmit não envia quando o index.html é aberto como arquivo local (file://). Teste o envio depois de publicar em um domínio da Netlify.
