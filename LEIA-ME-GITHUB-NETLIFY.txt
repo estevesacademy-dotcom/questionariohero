@@ -1,0 +1,36 @@
+CORRECAO PARA NETLIFY VIA GITHUB
+
+Esta versao foi preparada para evitar "Page not found".
+
+Agora os arquivos principais ficam diretamente na raiz do repositorio:
+
+- index.html
+- netlify.toml
+- assets/hero-reflexiva.png
+- netlify/functions/generate-diagnosis.mjs
+
+O netlify.toml da raiz publica a propria raiz:
+
+publish = "."
+functions = "netlify/functions"
+
+Configuracao na Netlify:
+- Build command: deixe vazio
+- Publish directory: deixe vazio ou use "."
+- Functions directory: netlify/functions
+
+Variaveis obrigatorias:
+- OPENAI_API_KEY = sua chave da OpenAI
+
+Opcional:
+- OPENAI_MODEL = gpt-5.5
+
+Depois de subir no GitHub:
+1. Faca commit incluindo index.html, netlify.toml, assets e netlify/functions na raiz.
+2. Na Netlify, acione "Trigger deploy" > "Deploy site".
+3. A pagina deve abrir pela raiz do dominio.
+
+Se ainda aparecer Page not found:
+- Verifique se index.html esta na raiz do repositorio no GitHub.
+- Verifique se netlify.toml esta na raiz do repositorio.
+- Em Site configuration > Build & deploy, confira se Publish directory nao esta apontando para uma pasta antiga.
