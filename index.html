@@ -2153,9 +2153,23 @@
       const renderDiagnosisError = (message) => {
         diagnosticContent.innerHTML = `
           <strong>IA ainda não conectada</strong>
-          <span>${escapeHtml(message)} Confira se a variável da OpenAI está configurada no mesmo site da Netlify e faça um novo deploy.</span>
+          <span>${escapeHtml(message)}</span>
           ${buildDiagnostic(JSON.parse(localStorage.getItem(SUBMISSION_KEY) || JSON.stringify(buildPayload())))}
         `;
+      };
+
+      const readJsonResponse = async (response) => {
+        const raw = await response.text();
+        try {
+          return JSON.parse(raw);
+        } catch (error) {
+          const receivedHtml = raw.trim().startsWith("<");
+          const message = receivedHtml
+            ? "A Netlify respondeu com uma página HTML em vez da Function de IA. Isso costuma acontecer quando o teste é feito pelo arquivo local, quando a pasta netlify/functions não foi enviada ao GitHub ou quando o deploy publicado não está usando a raiz do projeto."
+            : "A Function de IA respondeu em um formato inesperado. Faça um novo deploy e confira os logs da Function generate-diagnosis na Netlify.";
+
+          throw new Error(message);
+        }
       };
 
       const saveDraft = () => {
@@ -2292,7 +2306,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ assessment: payload, photos })
           });
-          const result = await response.json();
+          const result = await readJsonResponse(response);
           if (!response.ok) {
             throw new Error(result.error || result.detail || "Não foi possível gerar o diagnóstico com IA.");
           }

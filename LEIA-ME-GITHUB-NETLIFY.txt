@@ -6,7 +6,7 @@ Arquivos principais na raiz do repositório:
 - index.html
 - netlify.toml
 - assets/hero-reflexiva.png
-- netlify/functions/generate-diagnosis.mjs
+- netlify/functions/generate-diagnosis.js
 
 Configuração na Netlify:
 - Build command: deixe vazio
