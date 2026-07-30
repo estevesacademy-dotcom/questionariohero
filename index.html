@@ -157,6 +157,10 @@
       min-width: 0;
     }
 
+    .brand__text {
+      text-align: center;
+    }
+
     .brand__wordmark {
       position: relative;
       display: inline-flex;
@@ -1227,6 +1231,51 @@
   </style>
 </head>
 <body>
+  <form name="anamnese-hero" method="POST" data-netlify="true" netlify netlify-honeypot="bot-field" enctype="multipart/form-data" hidden>
+    <input type="hidden" name="form-name" value="anamnese-hero">
+    <input name="bot-field">
+    <input name="name">
+    <input name="age">
+    <input name="sex">
+    <input name="height">
+    <input name="weight">
+    <input name="whatsapp">
+    <input name="email">
+    <input name="primaryGoal">
+    <input name="otherGoal">
+    <input name="experienceTime">
+    <input name="weeklyFrequency">
+    <input name="hasPersonalTrainer">
+    <input name="didOnlineConsulting">
+    <input name="trainingLocation">
+    <input name="equipmentAvailable">
+    <input name="trainingTimeMinutes">
+    <input name="hasInjury">
+    <input name="medicalClearance">
+    <input name="injuryDescription">
+    <input name="healthFlags">
+    <input name="continuousMedication">
+    <input name="sleepHours">
+    <input name="waterLiters">
+    <input name="profession">
+    <input name="stressLevel">
+    <input name="alcohol">
+    <input name="smoking">
+    <input name="followsDiet">
+    <input name="nutritionist">
+    <input name="dietaryRestrictions">
+    <input name="bingeEating">
+    <input name="mealsPerDay">
+    <input name="bodyDiscomfort">
+    <input name="desiredResult">
+    <input name="targetDate">
+    <input name="photoCommitment">
+    <input name="assessmentJson">
+    <input type="file" name="photoFront">
+    <input type="file" name="photoBack">
+    <input type="file" name="photoSide">
+  </form>
+
   <div class="promo-bar" role="status" aria-live="polite">
     <div class="promo-bar__inner">
       <span class="promo-bar__label">Anamnese Premium H.E.R.O. | Avaliação inteligente</span>
@@ -1235,11 +1284,10 @@
 
   <header class="nav">
     <div class="shell nav__inner">
-      <a class="brand" href="#top" aria-label="H.E.R.O. Aesthetic Performance">
+      <a class="brand" href="#top" aria-label="Consultoria H.E.R.O.">
         <span class="brand__wordmark" aria-hidden="true"><span>H</span><span class="e">E</span><span>R</span><span class="accent">O</span></span>
         <span class="brand__text">
-          <strong>Aesthetic Performance</strong>
-          <span>Consultoria premium</span>
+          <strong>Consultoria H.E.R.O.</strong>
         </span>
       </a>
       <nav class="nav__links" aria-label="Navegação principal">
@@ -1258,15 +1306,15 @@
       <div class="shell wizard" data-wizard>
         <aside class="wizard__intro reveal">
           <div>
-            <span class="eyebrow">Analise individual</span>
+            <span class="eyebrow">Análise individual</span>
             <h1>Anamnese Premium</h1>
             <p class="intro-copy">Uma experiência guiada para transformar seus dados, histórico, rotina e objetivos em uma avaliação clara para o protocolo H.E.R.O.</p>
             <p class="persistent-copy">Ao final, suas respostas são organizadas para um diagnóstico inteligente feito por IA treinada no método H.E.R.O. e na direção profissional de Marcos Esteves.</p>
           </div>
 
-          <div class="assurance-grid" aria-label="Garantias da experiencia">
+          <div class="assurance-grid" aria-label="Garantias da experiência">
             <div class="assurance">
-              <strong>Personalizacao</strong>
+              <strong>Personalização</strong>
               <span>Cada resposta alimenta uma estrutura única de diagnóstico.</span>
             </div>
             <div class="assurance">
@@ -1280,11 +1328,15 @@
           </div>
         </aside>
 
-        <form class="wizard__panel reveal" data-form action="https://formsubmit.co/marcosestevees@icloud.com" method="POST" enctype="multipart/form-data" target="email-submit-frame" novalidate>
+        <form class="wizard__panel reveal" data-form name="anamnese-hero" action="/" method="POST" enctype="multipart/form-data" target="email-submit-frame" novalidate>
+          <input type="hidden" name="form-name" value="anamnese-hero">
           <input type="hidden" name="_subject" value="Nova Anamnese Premium H.E.R.O.">
           <input type="hidden" name="_template" value="table">
           <input type="hidden" name="_captcha" value="false">
           <input type="hidden" name="assessmentJson" data-assessment-json>
+          <p hidden>
+            <label>Não preencha este campo: <input name="bot-field"></label>
+          </p>
           <div class="wizard-top">
             <div class="progress-meta">
               <span data-step-label>Etapa 1 de 8</span>
@@ -1337,12 +1389,12 @@
                 <div class="field">
                   <label for="whatsapp">WhatsApp</label>
                   <input class="input" id="whatsapp" name="whatsapp" autocomplete="tel" inputmode="tel" data-mask="phone" data-required placeholder="(11) 99999-9999" type="tel">
-                  <span class="field__error">Informe um WhatsApp valido.</span>
+                  <span class="field__error">Informe um WhatsApp válido.</span>
                 </div>
                 <div class="field">
                   <label for="email">Email</label>
-                  <input class="input" id="email" name="email" autocomplete="email" data-required placeholder="voce@email.com" type="email">
-                  <span class="field__error">Informe um email valido.</span>
+                  <input class="input" id="email" name="email" autocomplete="email" data-required placeholder="seu@email.com" type="email">
+                  <span class="field__error">Informe um e-mail válido.</span>
                 </div>
               </div>
             </section>
@@ -1351,7 +1403,7 @@
               <div class="step__head">
                 <span class="step__kicker">Objetivo principal</span>
                 <h2>O que deve guiar seu protocolo?</h2>
-                <p>Escolha a prioridade mais importante agora. Ela sera usada como eixo da analise.</p>
+                <p>Escolha a prioridade mais importante agora. Ela será usada como eixo da análise.</p>
               </div>
               <div class="field-grid field-grid--single">
                 <fieldset class="option-field" data-required-group="primaryGoal">
@@ -1382,7 +1434,7 @@
               </div>
               <div class="field-grid">
                 <fieldset class="option-field" data-required-group="experienceTime">
-                  <span>Treina ha quanto tempo?</span>
+                  <span>Treina há quanto tempo?</span>
                   <div class="choice-group">
                     <label class="choice"><input type="radio" name="experienceTime" value="Nunca">Nunca</label>
                     <label class="choice"><input type="radio" name="experienceTime" value="Menos de 6 meses">Menos de 6 meses</label>
@@ -1407,7 +1459,7 @@
                   <span class="field__error">Selecione a frequencia.</span>
                 </div>
                 <fieldset class="option-field" data-required-group="hasPersonalTrainer">
-                  <span>Ja treinou com personal?</span>
+                  <span>Já treinou com personal?</span>
                   <div class="choice-group">
                     <label class="choice"><input type="radio" name="hasPersonalTrainer" value="Sim">Sim</label>
                     <label class="choice"><input type="radio" name="hasPersonalTrainer" value="Não">Não</label>
@@ -1415,7 +1467,7 @@
                   <span class="field__error">Selecione uma resposta.</span>
                 </fieldset>
                 <fieldset class="option-field" data-required-group="didOnlineConsulting">
-                  <span>Ja fez consultoria online?</span>
+                  <span>Já fez consultoria online?</span>
                   <div class="choice-group">
                     <label class="choice"><input type="radio" name="didOnlineConsulting" value="Sim">Sim</label>
                     <label class="choice"><input type="radio" name="didOnlineConsulting" value="Não">Não</label>
@@ -1469,7 +1521,7 @@
               </div>
               <div class="field-grid">
                 <fieldset class="option-field" data-required-group="hasInjury">
-                  <span>Possui alguma lesao?</span>
+                  <span>Possui alguma lesão?</span>
                   <div class="choice-group">
                     <label class="choice"><input type="radio" name="hasInjury" value="Sim" data-toggle-injury>Sim</label>
                     <label class="choice"><input type="radio" name="hasInjury" value="Não">Não</label>
@@ -1477,7 +1529,7 @@
                   <span class="field__error">Selecione uma resposta.</span>
                 </fieldset>
                 <fieldset class="option-field" data-required-group="medicalClearance">
-                  <span>Liberacao medica para exercicio?</span>
+                  <span>Liberação médica para exercício?</span>
                   <div class="choice-group">
                     <label class="choice"><input type="radio" name="medicalClearance" value="Sim">Sim</label>
                     <label class="choice"><input type="radio" name="medicalClearance" value="Não">Não</label>
@@ -1511,7 +1563,7 @@
               <div class="step__head">
                 <span class="step__kicker">Habitos</span>
                 <h2>Rotina que influencia resultado</h2>
-                <p>Sono, agua, profissao e estresse mudam a forma como o corpo responde ao treino.</p>
+                <p>Sono, água, profissão e estresse mudam a forma como o corpo responde ao treino.</p>
               </div>
               <div class="field-grid">
                 <div class="field">
@@ -1522,12 +1574,12 @@
                 <div class="field">
                   <label for="waterLiters">Consumo de água</label>
                   <input class="input" id="waterLiters" name="waterLiters" inputmode="decimal" data-required placeholder="2,5 L por dia" type="text">
-                  <span class="field__error">Informe seu consumo de agua.</span>
+                  <span class="field__error">Informe seu consumo de água.</span>
                 </div>
                 <div class="field">
-                  <label for="profession">Profissao</label>
+                  <label for="profession">Profissão</label>
                   <input class="input" id="profession" name="profession" data-required placeholder="Sua rotina profissional" type="text">
-                  <span class="field__error">Informe sua profissao.</span>
+                  <span class="field__error">Informe sua profissão.</span>
                 </div>
                 <div class="field">
                   <label for="stressLevel">Nível de estresse</label>
@@ -1576,7 +1628,7 @@
                   <span class="field__error">Selecione uma resposta.</span>
                 </fieldset>
                 <fieldset class="option-field" data-required-group="nutritionist">
-                  <span>Ja passou com nutricionista?</span>
+                  <span>Já passou com nutricionista?</span>
                   <div class="choice-group">
                     <label class="choice"><input type="radio" name="nutritionist" value="Sim">Sim</label>
                     <label class="choice"><input type="radio" name="nutritionist" value="Não">Não</label>
@@ -1589,7 +1641,7 @@
                   <span class="field__error">Informe suas restricoes.</span>
                 </div>
                 <fieldset class="option-field" data-required-group="bingeEating">
-                  <span>Possui compulsao alimentar?</span>
+                  <span>Possui compulsão alimentar?</span>
                   <div class="choice-group">
                     <label class="choice"><input type="radio" name="bingeEating" value="Sim">Sim</label>
                     <label class="choice"><input type="radio" name="bingeEating" value="Não">Não</label>
@@ -1598,7 +1650,7 @@
                   <span class="field__error">Selecione uma resposta.</span>
                 </fieldset>
                 <div class="field">
-                  <label for="mealsPerDay">Refeicoes por dia</label>
+                  <label for="mealsPerDay">Refeições por dia</label>
                   <select class="select" id="mealsPerDay" name="mealsPerDay" data-required>
                     <option value="">Selecione</option>
                     <option value="2">2 refeicoes</option>
@@ -1692,7 +1744,7 @@
   <footer>
     <div class="shell footer-grid">
       <div>
-        <strong>H.E.R.O. Aesthetic Performance</strong><br>
+        <strong>Consultoria H.E.R.O.</strong><br>
         Anamnese premium com protocolo individual, direção estratégica e diagnóstico inteligente.
       </div>
       <a href="#avaliacao">Voltar para avaliação</a>
@@ -1999,10 +2051,10 @@
 
       const fileToCompressedDataUrl = (file, maxSize = 1100, quality = .72) => new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onerror = () => reject(new Error("Nao foi possivel ler a foto."));
+        reader.onerror = () => reject(new Error("Não foi possível ler a foto."));
         reader.onload = () => {
           const image = new Image();
-          image.onerror = () => reject(new Error("Nao foi possivel processar a foto."));
+          image.onerror = () => reject(new Error("Não foi possível processar a foto."));
           image.onload = () => {
             const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
             const width = Math.max(1, Math.round(image.width * scale));
@@ -2101,7 +2153,7 @@
       const renderDiagnosisError = (message) => {
         diagnosticContent.innerHTML = `
           <strong>IA ainda não conectada</strong>
-          <span>${escapeHtml(message)} Depois de subir na Netlify, configure a variável OPENAI_API_KEY para ativar o diagnóstico real.</span>
+          <span>${escapeHtml(message)} Confira se a variável da OpenAI está configurada no mesmo site da Netlify e faça um novo deploy.</span>
           ${buildDiagnostic(JSON.parse(localStorage.getItem(SUBMISSION_KEY) || JSON.stringify(buildPayload())))}
         `;
       };

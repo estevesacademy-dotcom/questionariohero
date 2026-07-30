@@ -11,7 +11,7 @@ const json = (statusCode, body) => ({
 
 const truncateText = (value, limit = 16000) => {
   const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
-  return text.length > limit ? `${text.slice(0, limit)}\n...[conteudo reduzido]` : text;
+  return text.length > limit ? `${text.slice(0, limit)}\n...[conteúdo reduzido]` : text;
 };
 
 const extractOutputText = (response) => {
@@ -25,6 +25,28 @@ const extractOutputText = (response) => {
     }
   }
   return chunks.join("\n").trim();
+};
+
+const getOpenAiKey = () => {
+  const candidates = [
+    "OPENAI_API_KEY",
+    "OPENAI_KEY",
+    "OPENAI_SECRET_KEY",
+    "OPENAI_TOKEN"
+  ];
+
+  for (const name of candidates) {
+    const raw = process.env[name];
+    if (!raw) continue;
+    const value = raw.trim().replace(/^["']|["']$/g, "").replace(/^Bearer\s+/i, "");
+    if (value) return { value, name };
+  }
+
+  return {
+    value: "",
+    name: "",
+    availableOpenAiVars: Object.keys(process.env).filter((name) => name.toUpperCase().includes("OPENAI")).sort()
+  };
 };
 
 const diagnosisSchema = {
@@ -66,14 +88,16 @@ const diagnosisSchema = {
 
 export async function handler(event) {
   if (event.httpMethod !== "POST") {
-    return json(405, { error: "Metodo nao permitido." });
+    return json(405, { error: "Método não permitido." });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  const apiKey = getOpenAiKey();
+  if (!apiKey.value) {
     return json(500, {
-      error: "OPENAI_API_KEY nao configurada na Netlify.",
-      hint: "Adicione OPENAI_API_KEY em Site configuration > Environment variables."
+      error: "Chave da OpenAI não encontrada na Function da Netlify.",
+      hint: "Adicione OPENAI_API_KEY em Site configuration > Environment variables e faça um novo deploy. A variável precisa estar no mesmo site publicado.",
+      acceptedNames: ["OPENAI_API_KEY", "OPENAI_KEY", "OPENAI_SECRET_KEY", "OPENAI_TOKEN"],
+      availableOpenAiVars: apiKey.availableOpenAiVars || []
     });
   }
 
@@ -81,24 +105,24 @@ export async function handler(event) {
   try {
     body = JSON.parse(event.body || "{}");
   } catch (error) {
-    return json(400, { error: "JSON invalido no corpo da requisicao." });
+    return json(400, { error: "JSON inválido no corpo da requisição." });
   }
 
   const assessment = body.assessment;
   const photos = Array.isArray(body.photos) ? body.photos.slice(0, 3) : [];
 
   if (!assessment || typeof assessment !== "object") {
-    return json(400, { error: "Questionario ausente ou invalido." });
+    return json(400, { error: "Questionário ausente ou inválido." });
   }
 
   const userContent = [
     {
       type: "input_text",
       text: [
-        "Analise a anamnese abaixo e gere um diagnostico individual, profissional e acionavel.",
-        "Nao invente dados ausentes. Quando algo estiver ausente, indique a limitacao com elegancia.",
-        "Nao prometa resultado garantido. Nao faça diagnostico medico.",
-        "Use linguagem premium, objetiva, humana e adequada ao metodo H.E.R.O.",
+        "Analise a anamnese abaixo e gere um diagnóstico individual, profissional e acionável.",
+        "Não invente dados ausentes. Quando algo estiver ausente, indique a limitação com elegância.",
+        "Não prometa resultado garantido. Não faça diagnóstico médico.",
+        "Use linguagem premium, objetiva, humana e adequada ao método H.E.R.O.",
         "",
         truncateText(assessment)
       ].join("\n")
@@ -127,11 +151,11 @@ export async function handler(event) {
           {
             type: "input_text",
             text: [
-              "Voce e a IA H.E.R.O., treinada no metodo H.E.R.O. e na direcao profissional de Marcos Esteves.",
-              "Sua funcao e transformar anamnese, rotina, objetivo, historico de saude, alimentacao e fotos opcionais em uma avaliacao inicial personalizada.",
-              "Voce nao substitui avaliacao medica, nutricional ou profissional presencial.",
-              "Sempre responda em portugues do Brasil, com tom premium, claro e seguro.",
-              "Se houver lesao, hipertensao, diabetes, problema cardiaco ou ausencia de liberacao medica, reforce seguranca e orientacao profissional."
+              "Você é a IA H.E.R.O., treinada no método H.E.R.O. e na direção profissional de Marcos Esteves.",
+              "Sua função é transformar anamnese, rotina, objetivo, histórico de saúde, alimentação e fotos opcionais em uma avaliação inicial personalizada.",
+              "Você não substitui avaliação médica, nutricional ou profissional presencial.",
+              "Sempre responda em português do Brasil, com tom premium, claro e seguro.",
+              "Se houver lesão, hipertensão, diabetes, problema cardíaco ou ausência de liberação médica, reforce segurança e orientação profissional."
             ].join(" ")
           }
         ]
@@ -156,7 +180,7 @@ export async function handler(event) {
     openaiResponse = await fetch(OPENAI_RESPONSES_URL, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${apiKey.value}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(openaiPayload)
@@ -168,7 +192,7 @@ export async function handler(event) {
   const result = await openaiResponse.json().catch(() => ({}));
   if (!openaiResponse.ok) {
     return json(openaiResponse.status, {
-      error: "A OpenAI recusou a requisicao.",
+      error: "A OpenAI recusou a requisição.",
       detail: result.error?.message || "Sem detalhe retornado."
     });
   }
