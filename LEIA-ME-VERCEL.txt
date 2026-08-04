@@ -66,7 +66,9 @@ Se um dia quiser usar segredo, coloque exatamente o mesmo valor em SCRIPT_SECRET
 9. Who has access: Anyone
 10. Clique em Deploy
 11. Autorize o envio de e-mail, planilha e Drive
-12. Copie a URL do Web App
+12. No editor do Apps Script, selecione a funcao setupHeroBackend e clique em Run
+13. Autorize novamente se o Google pedir
+14. Copie a URL do Web App
 
 A URL correta precisa ter este formato:
 
@@ -91,6 +93,19 @@ FORM_CC_EMAIL e opcional, mas recomendado no primeiro teste. Assim voce confirma
 Nao configure GOOGLE_SCRIPT_SECRET enquanto SCRIPT_SECRET estiver vazio no Apps Script.
 
 Depois faca novo deploy na Vercel.
+
+IMPORTANTE SOBRE PERMISSOES DO GOOGLE
+
+Se aparecer erro de permissao como DriveApp.createFolder ou SpreadsheetApp.create, o codigo publicado ainda nao foi autorizado para Drive/Sheets. Resolva assim:
+
+1. Abra o Apps Script
+2. Selecione a funcao setupHeroBackend
+3. Clique em Run
+4. Aceite as permissoes
+5. Publique uma nova versao em Deploy > Manage deployments > Edit > Version > New version > Deploy
+6. Teste novamente
+
+Mesmo sem permissao de Drive, a versao atual nao deve quebrar o site. Ela tenta salvar o maximo possivel e retorna avisos internos.
 
 ONDE VER AS RESPOSTAS SE O E-MAIL NAO CHEGAR
 

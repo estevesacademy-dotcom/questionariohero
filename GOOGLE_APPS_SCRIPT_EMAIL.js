@@ -86,6 +86,21 @@ function makeAttachment(attachment) {
   return Utilities.newBlob(bytes, contentType, attachment.filename || "anexo");
 }
 
+function setupHeroBackend() {
+  var store = getOrCreateSpreadsheet();
+  var folder = getOrCreateFolder();
+
+  Logger.log("Planilha H.E.R.O.: " + store.spreadsheet.getUrl());
+  Logger.log("Pasta H.E.R.O.: " + folder.getUrl());
+  Logger.log("Quota restante de e-mail: " + MailApp.getRemainingDailyQuota());
+
+  return {
+    spreadsheetUrl: store.spreadsheet.getUrl(),
+    folderUrl: folder.getUrl(),
+    remainingDailyQuota: MailApp.getRemainingDailyQuota()
+  };
+}
+
 function saveSubmission(body) {
   var assessment = body.assessment || {};
   var personal = assessment.personalData || {};
@@ -94,42 +109,61 @@ function saveSubmission(body) {
   var attachments = body.attachments || [];
   var timestamp = new Date();
   var studentName = safeText(personal.name).replace(/[\\/:*?"<>|]/g, "-");
-  var rootFolder = getOrCreateFolder();
-  var submissionFolder = rootFolder.createFolder(
-    Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "yyyy-MM-dd HH-mm-ss") + " - " + studentName
-  );
+  var storageErrors = [];
+  var spreadsheetUrl = "";
+  var folderUrl = "";
+  var jsonUrl = "";
   var photoLinks = [];
+  var jsonText = JSON.stringify(assessment, null, 2);
 
-  attachments.forEach(function(attachment) {
-    var blob = makeAttachment(attachment);
-    var file = submissionFolder.createFile(blob);
-    photoLinks.push(file.getName() + ": " + file.getUrl());
-  });
+  try {
+    var rootFolder = getOrCreateFolder();
+    var submissionFolder = rootFolder.createFolder(
+      Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "yyyy-MM-dd HH-mm-ss") + " - " + studentName
+    );
+    folderUrl = submissionFolder.getUrl();
 
-  var jsonFile = submissionFolder.createFile(
-    "anamnese-completa.json",
-    JSON.stringify(assessment, null, 2),
-    MimeType.PLAIN_TEXT
-  );
+    attachments.forEach(function(attachment) {
+      var blob = makeAttachment(attachment);
+      var file = submissionFolder.createFile(blob);
+      photoLinks.push(file.getName() + ": " + file.getUrl());
+    });
 
-  var store = getOrCreateSpreadsheet();
-  store.sheet.appendRow([
-    timestamp,
-    safeText(personal.name),
-    safeText(personal.whatsapp),
-    safeText(personal.email),
-    safeText(objectives.primaryGoal),
-    safeText(bodyAssessment.desiredResult),
-    photoLinks.join("\n"),
-    submissionFolder.getUrl(),
-    jsonFile.getUrl()
-  ]);
+    var jsonFile = submissionFolder.createFile(
+      "anamnese-completa.json",
+      jsonText,
+      MimeType.PLAIN_TEXT
+    );
+    jsonUrl = jsonFile.getUrl();
+  } catch (driveError) {
+    storageErrors.push("Drive: " + (driveError && driveError.message ? driveError.message : String(driveError)));
+  }
+
+  try {
+    var store = getOrCreateSpreadsheet();
+    spreadsheetUrl = store.spreadsheet.getUrl();
+    store.sheet.appendRow([
+      timestamp,
+      safeText(personal.name),
+      safeText(personal.whatsapp),
+      safeText(personal.email),
+      safeText(objectives.primaryGoal),
+      safeText(bodyAssessment.desiredResult),
+      photoLinks.join("\n"),
+      folderUrl,
+      jsonUrl || jsonText.slice(0, 45000)
+    ]);
+  } catch (sheetError) {
+    storageErrors.push("Sheets: " + (sheetError && sheetError.message ? sheetError.message : String(sheetError)));
+  }
 
   return {
-    spreadsheetUrl: store.spreadsheet.getUrl(),
-    folderUrl: submissionFolder.getUrl(),
-    jsonUrl: jsonFile.getUrl(),
-    photoLinks: photoLinks
+    saved: storageErrors.length === 0 || Boolean(spreadsheetUrl),
+    spreadsheetUrl: spreadsheetUrl,
+    folderUrl: folderUrl,
+    jsonUrl: jsonUrl,
+    photoLinks: photoLinks,
+    storageErrors: storageErrors
   };
 }
 
@@ -138,7 +172,7 @@ function doGet() {
     ok: true,
     version: "sheets-drive-email-sem-secret-obrigatorio",
     secretRequired: Boolean(normalizeSecret(SCRIPT_SECRET)),
-    message: "Web App H.E.R.O. ativo. Use sendHeroTestEmail no editor para testar o envio e POST para receber anamneses."
+    message: "Web App H.E.R.O. ativo. Execute setupHeroBackend no editor uma vez para autorizar Drive, Sheets e Mail."
   });
 }
 
@@ -177,8 +211,9 @@ function doPost(e) {
       var html = [
         body.html || "<p>Nova anamnese recebida.</p>",
         "<hr>",
-        "<p><strong>Backup Google Sheets:</strong> <a href=\"" + saveResult.spreadsheetUrl + "\">Abrir planilha</a></p>",
-        "<p><strong>Pasta Drive:</strong> <a href=\"" + saveResult.folderUrl + "\">Abrir pasta da anamnese</a></p>"
+        saveResult.spreadsheetUrl ? "<p><strong>Backup Google Sheets:</strong> <a href=\"" + saveResult.spreadsheetUrl + "\">Abrir planilha</a></p>" : "",
+        saveResult.folderUrl ? "<p><strong>Pasta Drive:</strong> <a href=\"" + saveResult.folderUrl + "\">Abrir pasta da anamnese</a></p>" : "",
+        saveResult.storageErrors.length ? "<p><strong>Aviso interno:</strong> " + safeText(saveResult.storageErrors.join(" | ")) + "</p>" : ""
       ].join("");
 
       var options = {
@@ -191,8 +226,9 @@ function doPost(e) {
           "WhatsApp: " + safeText(personal.whatsapp),
           "Email: " + safeText(personal.email),
           "",
-          "Planilha: " + saveResult.spreadsheetUrl,
-          "Pasta Drive: " + saveResult.folderUrl
+          "Planilha: " + safeText(saveResult.spreadsheetUrl),
+          "Pasta Drive: " + safeText(saveResult.folderUrl),
+          "Avisos: " + safeText(saveResult.storageErrors.join(" | "))
         ].join("\n"),
         htmlBody: html,
         name: "Consultoria H.E.R.O.",
@@ -211,9 +247,10 @@ function doPost(e) {
 
     return jsonOutput(200, {
       ok: true,
-      saved: true,
+      saved: saveResult.saved,
       emailSent: emailSent,
       emailError: emailError,
+      storageErrors: saveResult.storageErrors,
       sentTo: body.to || DEFAULT_TO_EMAIL,
       cc: body.cc || "",
       bcc: body.bcc || "",

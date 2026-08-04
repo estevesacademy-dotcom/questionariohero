@@ -235,6 +235,7 @@ const sendWithGoogleAppsScript = async ({ assessment, photos, to, cc, bcc, html,
       saved: result.saved === true,
       emailSent: result.emailSent === true,
       emailError: result.emailError || "",
+      storageErrors: Array.isArray(result.storageErrors) ? result.storageErrors : [],
       spreadsheetUrl: result.spreadsheetUrl || "",
       folderUrl: result.folderUrl || "",
       remainingDailyQuota: result.remainingDailyQuota
