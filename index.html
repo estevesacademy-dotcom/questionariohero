@@ -1750,51 +1750,6 @@
   </style>
 </head>
 <body>
-  <form name="anamnese-hero" method="POST" data-netlify="true" netlify netlify-honeypot="bot-field" enctype="multipart/form-data" hidden>
-    <input type="hidden" name="form-name" value="anamnese-hero">
-    <input name="bot-field">
-    <input name="name">
-    <input name="age">
-    <input name="sex">
-    <input name="height">
-    <input name="weight">
-    <input name="whatsapp">
-    <input name="email">
-    <input name="primaryGoal">
-    <input name="otherGoal">
-    <input name="experienceTime">
-    <input name="weeklyFrequency">
-    <input name="hasPersonalTrainer">
-    <input name="didOnlineConsulting">
-    <input name="trainingLocation">
-    <input name="equipmentAvailable">
-    <input name="trainingTimeMinutes">
-    <input name="hasInjury">
-    <input name="medicalClearance">
-    <input name="injuryDescription">
-    <input name="healthFlags">
-    <input name="continuousMedication">
-    <input name="sleepHours">
-    <input name="waterLiters">
-    <input name="profession">
-    <input name="stressLevel">
-    <input name="alcohol">
-    <input name="smoking">
-    <input name="followsDiet">
-    <input name="nutritionist">
-    <input name="dietaryRestrictions">
-    <input name="bingeEating">
-    <input name="mealsPerDay">
-    <input name="bodyDiscomfort">
-    <input name="desiredResult">
-    <input name="targetDate">
-    <input name="photoCommitment">
-    <input name="assessmentJson">
-    <input type="file" name="photoFront">
-    <input type="file" name="photoBack">
-    <input type="file" name="photoSide">
-  </form>
-
   <div class="promo-bar" role="status" aria-live="polite">
     <div class="promo-bar__inner">
       <span class="promo-bar__label">Anamnese Premium H.E.R.O. | Avaliação inteligente</span>
@@ -1832,11 +1787,7 @@
           </div>
         </aside>
 
-        <form class="wizard__panel reveal" data-form name="anamnese-hero" action="/" method="POST" enctype="multipart/form-data" target="email-submit-frame" novalidate>
-          <input type="hidden" name="form-name" value="anamnese-hero">
-          <input type="hidden" name="_subject" value="Nova Anamnese Premium H.E.R.O.">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_captcha" value="false">
+        <form class="wizard__panel reveal" data-form name="anamnese-hero" novalidate>
           <input type="hidden" name="assessmentJson" data-assessment-json>
           <p hidden>
             <label>Não preencha este campo: <input name="bot-field"></label>
@@ -2243,8 +2194,6 @@
     </section>
   </main>
 
-  <iframe name="email-submit-frame" title="Envio da anamnese" hidden></iframe>
-
   <footer>
     <div class="shell footer-grid">
       <div>
@@ -2638,7 +2587,7 @@
             </div>
             <div class="diagnostic-item">
               <b>Modelo IA</b>
-              <p>${escapeHtml(model || "OpenAI")} aplicado via Netlify Function com chave segura no servidor.</p>
+              <p>${escapeHtml(model || "OpenAI")} aplicado via API da Vercel com chave segura no servidor.</p>
             </div>
           </div>
           <div class="diagnostic-grid" style="margin-top: 12px;">
@@ -2669,11 +2618,25 @@
         } catch (error) {
           const receivedHtml = raw.trim().startsWith("<");
           const message = receivedHtml
-            ? "A Netlify respondeu com uma página HTML em vez da Function de IA. Isso costuma acontecer quando o teste é feito pelo arquivo local, quando a pasta netlify/functions não foi enviada ao GitHub ou quando o deploy publicado não está usando a raiz do projeto."
-            : "A Function de IA respondeu em um formato inesperado. Faça um novo deploy e confira os logs da Function generate-diagnosis na Netlify.";
+            ? "A Vercel respondeu com uma página HTML em vez da API. Teste pelo domínio publicado da Vercel e confira se a pasta api foi enviada ao GitHub na raiz do projeto."
+            : "A API respondeu em um formato inesperado. Faça um novo deploy e confira os logs da função na Vercel.";
 
           throw new Error(message);
         }
+      };
+
+      const submitAssessment = async (payload) => {
+        const photos = await collectDiagnosisPhotos();
+        const response = await fetch("/api/submit-form", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assessment: payload, photos })
+        });
+        const result = await readJsonResponse(response);
+        if (!response.ok || result.ok === false) {
+          throw new Error(result.error || result.detail || "Não foi possível enviar a anamnese.");
+        }
+        return result;
       };
 
       const saveDraft = () => {
@@ -2765,7 +2728,7 @@
         queueSave();
       });
 
-      nextButton.addEventListener("click", () => {
+      nextButton.addEventListener("click", async () => {
         if (!validateCurrentStep()) return;
         if (currentStep < totalSteps) {
           currentStep += 1;
@@ -2775,12 +2738,24 @@
         }
         const payload = buildPayload();
         assessmentJson.value = JSON.stringify(payload, null, 2);
-        form.submit();
         localStorage.setItem(SUBMISSION_KEY, JSON.stringify(payload));
-        localStorage.removeItem(STORAGE_KEY);
-        wizard.hidden = true;
-        successPanel.hidden = false;
-        successPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+        nextButton.disabled = true;
+        nextButton.textContent = "Enviando";
+        setStatus("Enviando avaliação");
+
+        try {
+          await submitAssessment(payload);
+          localStorage.removeItem(STORAGE_KEY);
+          setStatus("Anamnese enviada");
+          wizard.hidden = true;
+          successPanel.hidden = false;
+          successPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+        } catch (error) {
+          nextButton.disabled = false;
+          nextButton.textContent = "Finalizar avaliação";
+          setStatus("Falha no envio");
+          window.alert(error.message || "Não foi possível enviar a anamnese. Confira a configuração da Vercel e tente novamente.");
+        }
       });
 
       prevButton.addEventListener("click", () => {
@@ -2805,7 +2780,7 @@
 
         try {
           const photos = await collectDiagnosisPhotos();
-          const response = await fetch("/.netlify/functions/generate-diagnosis", {
+          const response = await fetch("/api/generate-diagnosis", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ assessment: payload, photos })

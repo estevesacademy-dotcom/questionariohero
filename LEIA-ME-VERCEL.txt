@@ -1,0 +1,73 @@
+ANAMNESE H.E.R.O. - DEPLOY NA VERCEL
+
+1. O QUE SUBIR
+
+Suba para o GitHub ou arraste para a Vercel estes arquivos e pastas:
+
+- index.html
+- package.json
+- vercel.json
+- api/
+- assets/
+
+Este pacote nao depende mais de Netlify Forms nem de netlify/functions.
+
+2. CONFIGURACAO DO PROJETO NA VERCEL
+
+Ao importar o projeto na Vercel:
+
+- Framework Preset: Other
+- Root Directory: raiz do projeto
+- Build Command: vazio
+- Output Directory: vazio
+- Install Command: vazio ou padrao
+
+Depois clique em Deploy.
+
+3. VARIAVEIS PARA ATIVAR A IA
+
+Na Vercel, acesse:
+
+Project Settings > Environment Variables
+
+Crie:
+
+OPENAI_API_KEY = sua chave da OpenAI
+
+Opcional:
+
+OPENAI_MODEL = gpt-5
+
+Depois faca um novo deploy de producao. Variavel criada depois do deploy nao ativa no deploy antigo.
+
+4. VARIAVEIS PARA RECEBER O FORMULARIO E AS FOTOS POR E-MAIL
+
+A Vercel nao tem formularios nativos como a Netlify. O envio foi configurado por API usando Resend.
+
+Crie uma conta em https://resend.com, gere uma API key e adicione na Vercel:
+
+RESEND_API_KEY = sua chave do Resend
+FORM_TO_EMAIL = marcosestevees@icloud.com
+FORM_FROM_EMAIL = Consultoria H.E.R.O. <seu-email-verificado@seudominio.com>
+
+Para teste, o Resend permite exemplos com:
+
+FORM_FROM_EMAIL = Consultoria H.E.R.O. <onboarding@resend.dev>
+
+Para producao, use um remetente com dominio verificado no Resend. Se o remetente nao estiver autorizado, o envio sera recusado pelo provedor.
+
+5. COMO TESTAR
+
+Depois do deploy:
+
+- Abra https://SEU-SITE.vercel.app/api/generate-diagnosis
+  Deve aparecer: {"error":"Metodo nao permitido."}
+
+- Abra https://SEU-SITE.vercel.app/api/submit-form
+  Deve aparecer: {"error":"Metodo nao permitido."}
+
+Isso confirma que as APIs existem. Em seguida, preencha o formulario completo pelo dominio da Vercel, anexe fotos pequenas ou marque o envio posterior, finalize e confira o e-mail.
+
+6. OBSERVACAO SOBRE FOTOS
+
+As fotos sao comprimidas no navegador antes de irem para a IA e para o e-mail. Ainda assim, evite anexar imagens gigantes. Se o envio falhar por tamanho, reduza as imagens ou envie sem fotos e use a opcao de envio posterior.

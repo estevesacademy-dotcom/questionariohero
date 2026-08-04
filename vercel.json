@@ -1,0 +1,26 @@
+{
+  "cleanUrls": true,
+  "functions": {
+    "api/generate-diagnosis.js": {
+      "maxDuration": 60
+    },
+    "api/submit-form.js": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
+}
