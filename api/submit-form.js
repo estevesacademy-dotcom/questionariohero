@@ -1,6 +1,7 @@
 const RESEND_EMAIL_URL = "https://api.resend.com/emails";
 const DEFAULT_TO_EMAIL = "marcosestevees@icloud.com";
 const DEFAULT_FROM_EMAIL = "Consultoria H.E.R.O. <onboarding@resend.dev>";
+const DEFAULT_SMTP_FROM = "Consultoria H.E.R.O.";
 
 const json = (status, body) => Response.json(body, {
   status,
@@ -140,18 +141,125 @@ const buildAttachments = (assessment, photos) => {
   return attachments;
 };
 
+const sendWithSmtp = async ({ assessment, photos, to, from, html, subject, replyTo }) => {
+  const smtpUser = process.env.SMTP_USER || "";
+  const smtpPass = process.env.SMTP_PASS || "";
+
+  if (!smtpUser || !smtpPass) {
+    return {
+      configured: false,
+      response: json(500, {
+        ok: false,
+        error: "Envio por e-mail nao configurado.",
+        hint: "Configure RESEND_API_KEY ou use SMTP sem dominio proprio com SMTP_USER e SMTP_PASS na Vercel."
+      })
+    };
+  }
+
+  const nodemailer = await import("nodemailer");
+  const smtpPort = Number(process.env.SMTP_PORT || 465);
+  const smtpHost = process.env.SMTP_HOST || "";
+  const smtpService = process.env.SMTP_SERVICE || "";
+  const smtpSecure = String(process.env.SMTP_SECURE || (smtpPort === 465 ? "true" : "false")).toLowerCase() === "true";
+  const sender = process.env.FORM_FROM_EMAIL || `${DEFAULT_SMTP_FROM} <${smtpUser}>`;
+
+  const transportOptions = smtpService
+    ? {
+        service: smtpService,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass
+        }
+      }
+    : {
+        host: smtpHost || "smtp.gmail.com",
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass
+        }
+      };
+
+  const transporter = nodemailer.default.createTransport(transportOptions);
+  const attachments = buildAttachments(assessment, photos).map((attachment) => ({
+    filename: attachment.filename,
+    content: Buffer.from(attachment.content, "base64")
+  }));
+
+  const info = await transporter.sendMail({
+    from: sender || from,
+    to,
+    replyTo,
+    subject,
+    html,
+    attachments
+  });
+
+  return {
+    configured: true,
+    response: json(200, {
+      ok: true,
+      provider: "smtp",
+      emailId: info.messageId,
+      sentTo: to,
+      photosAttached: photos.length
+    })
+  };
+};
+
+const sendWithResend = async ({ assessment, photos, to, from, html, subject, replyTo }) => {
+  const resendKey = normalizeEmailKey(process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "");
+  if (!resendKey) return { configured: false };
+
+  const emailPayload = {
+    from,
+    to: [to],
+    subject,
+    html,
+    attachments: buildAttachments(assessment, photos)
+  };
+
+  if (replyTo) emailPayload.reply_to = replyTo;
+
+  const resendResponse = await fetch(RESEND_EMAIL_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${resendKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(emailPayload)
+  });
+
+  const result = await resendResponse.json().catch(() => ({}));
+  if (!resendResponse.ok) {
+    return {
+      configured: true,
+      response: json(resendResponse.status, {
+        ok: false,
+        error: "O provedor de e-mail recusou o envio.",
+        detail: result.message || result.error || "Sem detalhe retornado.",
+        sentTo: to,
+        from
+      })
+    };
+  }
+
+  return {
+    configured: true,
+    response: json(200, {
+      ok: true,
+      provider: "resend",
+      emailId: result.id,
+      sentTo: to,
+      photosAttached: photos.length
+    })
+  };
+};
+
 const handleSubmit = async (request) => {
   if (request.method !== "POST") {
     return json(405, { error: "Metodo nao permitido." });
-  }
-
-  const resendKey = normalizeEmailKey(process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "");
-  if (!resendKey) {
-    return json(500, {
-      ok: false,
-      error: "RESEND_API_KEY nao configurada na Vercel.",
-      hint: "Crie uma conta no Resend, gere uma API key e adicione RESEND_API_KEY em Project Settings > Environment Variables. Depois faca um novo deploy."
-    });
   }
 
   let body;
@@ -172,43 +280,22 @@ const handleSubmit = async (request) => {
   const from = process.env.FORM_FROM_EMAIL || DEFAULT_FROM_EMAIL;
   const studentName = assessment.personalData?.name || "Aluno H.E.R.O.";
   const replyTo = assessment.personalData?.email || undefined;
+  const subject = `Nova Anamnese H.E.R.O. - ${studentName}`;
+  const html = buildEmailHtml(assessment, photos);
 
-  const emailPayload = {
-    from,
-    to: [to],
-    subject: `Nova Anamnese H.E.R.O. - ${studentName}`,
-    html: buildEmailHtml(assessment, photos),
-    attachments: buildAttachments(assessment, photos)
-  };
+  try {
+    const resend = await sendWithResend({ assessment, photos, to, from, html, subject, replyTo });
+    if (resend.configured) return resend.response;
 
-  if (replyTo) emailPayload.reply_to = replyTo;
-
-  const resendResponse = await fetch(RESEND_EMAIL_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${resendKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(emailPayload)
-  });
-
-  const result = await resendResponse.json().catch(() => ({}));
-  if (!resendResponse.ok) {
-    return json(resendResponse.status, {
+    const smtp = await sendWithSmtp({ assessment, photos, to, from, html, subject, replyTo });
+    return smtp.response;
+  } catch (error) {
+    return json(502, {
       ok: false,
-      error: "O provedor de e-mail recusou o envio.",
-      detail: result.message || result.error || "Sem detalhe retornado.",
-      sentTo: to,
-      from
+      error: "Falha ao enviar o e-mail.",
+      detail: error.message
     });
   }
-
-  return json(200, {
-    ok: true,
-    emailId: result.id,
-    sentTo: to,
-    photosAttached: photos.length
-  });
 };
 
 export default {

@@ -42,17 +42,47 @@ Depois faca um novo deploy de producao. Variavel criada depois do deploy nao ati
 
 4. VARIAVEIS PARA RECEBER O FORMULARIO E AS FOTOS POR E-MAIL
 
-A Vercel nao tem formularios nativos como a Netlify. O envio foi configurado por API usando Resend.
+A Vercel nao tem formularios nativos como a Netlify. O envio foi configurado por API e aceita duas opcoes:
+
+OPCAO A - SEM DOMINIO PROPRIO, USANDO GMAIL/ICLOUD/OUTLOOK POR SMTP
+
+Essa e a opcao mais simples quando voce nao quer comprar ou verificar dominio.
+
+Para Gmail:
+
+SMTP_SERVICE = Gmail
+SMTP_USER = seuemail@gmail.com
+SMTP_PASS = senha de app do Gmail
+FORM_TO_EMAIL = marcosestevees@icloud.com
+FORM_FROM_EMAIL = Consultoria H.E.R.O. <seuemail@gmail.com>
+
+Para iCloud:
+
+SMTP_HOST = smtp.mail.me.com
+SMTP_PORT = 587
+SMTP_SECURE = false
+SMTP_USER = seuemail@icloud.com
+SMTP_PASS = senha especifica de app da Apple
+FORM_TO_EMAIL = marcosestevees@icloud.com
+FORM_FROM_EMAIL = Consultoria H.E.R.O. <seuemail@icloud.com>
+
+Para Outlook/Hotmail:
+
+SMTP_SERVICE = Outlook365
+SMTP_USER = seuemail@outlook.com
+SMTP_PASS = sua senha de app ou senha autorizada
+FORM_TO_EMAIL = marcosestevees@icloud.com
+FORM_FROM_EMAIL = Consultoria H.E.R.O. <seuemail@outlook.com>
+
+Depois faca um novo deploy.
+
+OPCAO B - RESEND COM DOMINIO VERIFICADO
 
 Crie uma conta em https://resend.com, gere uma API key e adicione na Vercel:
 
 RESEND_API_KEY = sua chave do Resend
 FORM_TO_EMAIL = marcosestevees@icloud.com
 FORM_FROM_EMAIL = Consultoria H.E.R.O. <seu-email-verificado@seudominio.com>
-
-Para teste, o Resend permite exemplos com:
-
-FORM_FROM_EMAIL = Consultoria H.E.R.O. <onboarding@resend.dev>
 
 Para producao, use um remetente com dominio verificado no Resend. Se o remetente nao estiver autorizado, o envio sera recusado pelo provedor.
 
