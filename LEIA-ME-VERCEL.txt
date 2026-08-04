@@ -42,11 +42,43 @@ Depois faca um novo deploy de producao. Variavel criada depois do deploy nao ati
 
 4. VARIAVEIS PARA RECEBER O FORMULARIO E AS FOTOS POR E-MAIL
 
-A Vercel nao tem formularios nativos como a Netlify. O envio foi configurado por API e aceita duas opcoes:
+A Vercel nao tem formularios nativos como a Netlify. O envio foi configurado por API e aceita tres opcoes.
 
-OPCAO A - SEM DOMINIO PROPRIO, USANDO GMAIL/ICLOUD/OUTLOOK POR SMTP
+OPCAO A - RECOMENDADA, SEM DOMINIO PROPRIO, USANDO GOOGLE APPS SCRIPT
 
-Essa e a opcao mais simples quando voce nao quer comprar ou verificar dominio.
+Essa e a opcao mais estavel sem dominio proprio, porque a Vercel chama o Google por HTTPS e o Google envia o e-mail com MailApp. Nao usa SMTP, nao usa dominio verificado e aceita anexos.
+
+1. Acesse https://script.google.com
+2. Crie um novo projeto
+3. Apague o codigo inicial
+4. Cole o conteudo do arquivo GOOGLE_APPS_SCRIPT_EMAIL.js
+5. Troque a linha:
+
+SCRIPT_SECRET = "troque-este-codigo-secreto"
+
+por um codigo seu, por exemplo:
+
+SCRIPT_SECRET = "hero-2026-codigo-secreto"
+
+6. Clique em Deploy > New deployment
+7. Tipo: Web app
+8. Execute as: Me
+9. Who has access: Anyone
+10. Clique em Deploy
+11. Autorize o envio de e-mail
+12. Copie a URL do Web App
+
+Na Vercel, configure:
+
+GOOGLE_SCRIPT_URL = URL do Web App copiada no Apps Script
+GOOGLE_SCRIPT_SECRET = o mesmo codigo secreto colocado no Apps Script
+FORM_TO_EMAIL = marcosestevees@icloud.com
+
+Depois faca novo deploy na Vercel.
+
+OPCAO B - SEM DOMINIO PROPRIO, USANDO GMAIL/ICLOUD/OUTLOOK POR SMTP
+
+Use apenas se nao quiser usar Google Apps Script. SMTP pode falhar com mais facilidade em ambiente serverless.
 
 Para Gmail:
 

@@ -143,6 +143,69 @@ const buildAttachments = (assessment, photos) => {
   return attachments;
 };
 
+const sendWithGoogleAppsScript = async ({ assessment, photos, to, html, subject, replyTo }) => {
+  const scriptUrl = cleanEnvValue(process.env.GOOGLE_SCRIPT_URL || "");
+  if (!scriptUrl) return { configured: false };
+
+  const scriptSecret = cleanEnvValue(process.env.GOOGLE_SCRIPT_SECRET || "");
+  if (!scriptSecret) {
+    return {
+      configured: true,
+      response: json(500, {
+        ok: false,
+        error: "GOOGLE_SCRIPT_SECRET nao configurada na Vercel.",
+        hint: "Crie um codigo secreto simples, coloque em GOOGLE_SCRIPT_SECRET na Vercel e use o mesmo valor no Apps Script."
+      })
+    };
+  }
+
+  const scriptResponse = await fetch(scriptUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      secret: scriptSecret,
+      to,
+      subject,
+      html,
+      replyTo,
+      assessment,
+      attachments: buildAttachments(assessment, photos)
+    })
+  });
+
+  const raw = await scriptResponse.text();
+  let result = {};
+  try {
+    result = JSON.parse(raw);
+  } catch (error) {
+    result = { raw };
+  }
+
+  if (!scriptResponse.ok || result.ok === false) {
+    return {
+      configured: true,
+      response: json(scriptResponse.status || 502, {
+        ok: false,
+        error: "O Google Apps Script recusou o envio.",
+        detail: result.error || result.detail || raw.slice(0, 500) || "Sem detalhe retornado.",
+        hint: "Confira se o Web App do Apps Script esta publicado como 'Anyone' e se GOOGLE_SCRIPT_SECRET e igual nos dois lugares."
+      })
+    };
+  }
+
+  return {
+    configured: true,
+    response: json(200, {
+      ok: true,
+      provider: "google-apps-script",
+      sentTo: to,
+      photosAttached: photos.length
+    })
+  };
+};
+
 const sendWithSmtp = async ({ assessment, photos, to, from, html, subject, replyTo }) => {
   const smtpUser = cleanEnvValue(process.env.SMTP_USER || "");
   const smtpPass = cleanEnvValue(process.env.SMTP_PASS || "");
@@ -289,6 +352,9 @@ const handleSubmit = async (request) => {
   const html = buildEmailHtml(assessment, photos);
 
   try {
+    const googleScript = await sendWithGoogleAppsScript({ assessment, photos, to, html, subject, replyTo });
+    if (googleScript.configured) return googleScript.response;
+
     const resend = await sendWithResend({ assessment, photos, to, from, html, subject, replyTo });
     if (resend.configured) return resend.response;
 
