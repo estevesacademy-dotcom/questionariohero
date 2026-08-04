@@ -1,4 +1,4 @@
-const SCRIPT_SECRET = "troque-este-codigo-secreto";
+const SCRIPT_SECRET = "";
 const SPREADSHEET_ID = "";
 const DRIVE_FOLDER_ID = "";
 const DEFAULT_TO_EMAIL = "marcosestevees@icloud.com";
@@ -14,6 +14,16 @@ function safeText(value) {
   if (Array.isArray(value)) return value.length ? value.join(", ") : "Nao informado";
   if (typeof value === "object") return JSON.stringify(value, null, 2);
   return String(value);
+}
+
+function normalizeSecret(value) {
+  return String(value || "").trim().replace(/^["']|["']$/g, "");
+}
+
+function isAuthorized(body) {
+  var expected = normalizeSecret(SCRIPT_SECRET);
+  if (!expected) return true;
+  return normalizeSecret(body.secret) === expected;
 }
 
 function getOrCreateSpreadsheet() {
@@ -126,6 +136,8 @@ function saveSubmission(body) {
 function doGet() {
   return jsonOutput(200, {
     ok: true,
+    version: "sheets-drive-email-sem-secret-obrigatorio",
+    secretRequired: Boolean(normalizeSecret(SCRIPT_SECRET)),
     message: "Web App H.E.R.O. ativo. Use sendHeroTestEmail no editor para testar o envio e POST para receber anamneses."
   });
 }
@@ -146,8 +158,12 @@ function doPost(e) {
   try {
     var body = JSON.parse(e.postData && e.postData.contents ? e.postData.contents : "{}");
 
-    if (!body.secret || body.secret !== SCRIPT_SECRET) {
-      return jsonOutput(401, { ok: false, error: "Secret invalido." });
+    if (!isAuthorized(body)) {
+      return jsonOutput(401, {
+        ok: false,
+        error: "Secret invalido.",
+        hint: "SCRIPT_SECRET esta preenchido no Apps Script e nao bate com GOOGLE_SCRIPT_SECRET. Para simplificar, deixe SCRIPT_SECRET vazio."
+      });
     }
 
     var assessment = body.assessment || {};

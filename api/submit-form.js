@@ -21,6 +21,17 @@ const normalizeEmailKey = (value = "") => value.trim().replace(/^["']|["']$/g, "
 
 const cleanEnvValue = (value = "") => String(value).trim().replace(/^["']|["']$/g, "");
 
+const isValidAppsScriptWebAppUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && url.hostname === "script.google.com"
+      && /^\/macros\/s\/[^/]+\/exec$/.test(url.pathname);
+  } catch (error) {
+    return false;
+  }
+};
+
 const formatValue = (value) => {
   if (Array.isArray(value)) return value.length ? value.join(", ") : "Nao informado";
   if (value === true) return "Sim";
@@ -147,17 +158,19 @@ const sendWithGoogleAppsScript = async ({ assessment, photos, to, cc, bcc, html,
   const scriptUrl = cleanEnvValue(process.env.GOOGLE_SCRIPT_URL || "");
   if (!scriptUrl) return { configured: false };
 
-  const scriptSecret = cleanEnvValue(process.env.GOOGLE_SCRIPT_SECRET || "");
-  if (!scriptSecret) {
+  if (!isValidAppsScriptWebAppUrl(scriptUrl)) {
     return {
       configured: true,
       response: json(500, {
         ok: false,
-        error: "GOOGLE_SCRIPT_SECRET nao configurada na Vercel.",
-        hint: "Crie um codigo secreto simples, coloque em GOOGLE_SCRIPT_SECRET na Vercel e use o mesmo valor no Apps Script."
+        error: "GOOGLE_SCRIPT_URL invalida.",
+        detail: "A URL precisa ser a URL do Web App publicado no Apps Script e deve terminar com /exec.",
+        hint: "Use uma URL neste formato: https://script.google.com/macros/s/SEU_DEPLOYMENT_ID/exec. Nao use link do editor, docs.google.com, /dev, Google Drive ou Deployment ID sozinho."
       })
     };
   }
+
+  const scriptSecret = cleanEnvValue(process.env.GOOGLE_SCRIPT_SECRET || "");
 
   const scriptResponse = await fetch(scriptUrl, {
     method: "POST",
@@ -178,11 +191,26 @@ const sendWithGoogleAppsScript = async ({ assessment, photos, to, cc, bcc, html,
   });
 
   const raw = await scriptResponse.text();
+  const contentType = scriptResponse.headers.get("content-type") || "";
   let result = {};
   try {
     result = JSON.parse(raw);
   } catch (error) {
     result = { raw };
+  }
+
+  if (contentType.includes("text/html") || raw.trim().startsWith("<")) {
+    return {
+      configured: true,
+      response: json(502, {
+        ok: false,
+        error: "A URL do Apps Script retornou uma pagina HTML, nao a API da anamnese.",
+        detail: raw.includes("Page Not Found")
+          ? "O Google retornou Page Not Found. Isso acontece quando GOOGLE_SCRIPT_URL nao e a URL correta do Web App publicado."
+          : "A resposta do Google veio em HTML, entao a URL configurada nao apontou para o endpoint JSON esperado.",
+        hint: "No Apps Script, va em Deploy > Manage deployments > copie a Web app URL. Ela deve comecar com https://script.google.com/macros/s/ e terminar com /exec. Atualize GOOGLE_SCRIPT_URL na Vercel e faca Redeploy."
+      })
+    };
   }
 
   if (!scriptResponse.ok || result.ok === false) {
@@ -192,7 +220,7 @@ const sendWithGoogleAppsScript = async ({ assessment, photos, to, cc, bcc, html,
         ok: false,
         error: "O Google Apps Script recusou o envio.",
         detail: result.error || result.detail || raw.slice(0, 500) || "Sem detalhe retornado.",
-        hint: "Confira se o Web App do Apps Script esta publicado como 'Anyone' e se GOOGLE_SCRIPT_SECRET e igual nos dois lugares."
+        hint: "Confira se o Web App do Apps Script esta publicado como 'Anyone'. Para eliminar erro de segredo, deixe SCRIPT_SECRET vazio no Apps Script e remova GOOGLE_SCRIPT_SECRET da Vercel."
       })
     };
   }
