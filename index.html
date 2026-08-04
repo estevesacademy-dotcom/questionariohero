@@ -2634,7 +2634,8 @@
         });
         const result = await readJsonResponse(response);
         if (!response.ok || result.ok === false) {
-          throw new Error(result.error || result.detail || "Não foi possível enviar a anamnese.");
+          const message = [result.error, result.detail, result.hint].filter(Boolean).join("\n\n");
+          throw new Error(message || "Não foi possível enviar a anamnese.");
         }
         return result;
       };

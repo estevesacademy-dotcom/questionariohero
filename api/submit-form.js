@@ -19,6 +19,8 @@ const escapeHtml = (value) => String(value ?? "")
 
 const normalizeEmailKey = (value = "") => value.trim().replace(/^["']|["']$/g, "").replace(/^Bearer\s+/i, "");
 
+const cleanEnvValue = (value = "") => String(value).trim().replace(/^["']|["']$/g, "");
+
 const formatValue = (value) => {
   if (Array.isArray(value)) return value.length ? value.join(", ") : "Nao informado";
   if (value === true) return "Sim";
@@ -142,8 +144,8 @@ const buildAttachments = (assessment, photos) => {
 };
 
 const sendWithSmtp = async ({ assessment, photos, to, from, html, subject, replyTo }) => {
-  const smtpUser = process.env.SMTP_USER || "";
-  const smtpPass = process.env.SMTP_PASS || "";
+  const smtpUser = cleanEnvValue(process.env.SMTP_USER || "");
+  const smtpPass = cleanEnvValue(process.env.SMTP_PASS || "");
 
   if (!smtpUser || !smtpPass) {
     return {
@@ -157,10 +159,11 @@ const sendWithSmtp = async ({ assessment, photos, to, from, html, subject, reply
   }
 
   const nodemailer = await import("nodemailer");
-  const smtpPort = Number(process.env.SMTP_PORT || 465);
-  const smtpHost = process.env.SMTP_HOST || "";
-  const smtpService = process.env.SMTP_SERVICE || "";
+  const smtpHost = cleanEnvValue(process.env.SMTP_HOST || "");
+  const smtpService = cleanEnvValue(process.env.SMTP_SERVICE || "");
+  const smtpPort = Number(process.env.SMTP_PORT || (smtpHost === "smtp.mail.me.com" ? 587 : 465));
   const smtpSecure = String(process.env.SMTP_SECURE || (smtpPort === 465 ? "true" : "false")).toLowerCase() === "true";
+  const smtpRequireTls = String(process.env.SMTP_REQUIRE_TLS || (smtpPort === 587 ? "true" : "false")).toLowerCase() === "true";
   const sender = process.env.FORM_FROM_EMAIL || `${DEFAULT_SMTP_FROM} <${smtpUser}>`;
 
   const transportOptions = smtpService
@@ -175,6 +178,8 @@ const sendWithSmtp = async ({ assessment, photos, to, from, html, subject, reply
         host: smtpHost || "smtp.gmail.com",
         port: smtpPort,
         secure: smtpSecure,
+        requireTLS: smtpRequireTls,
+        tls: smtpHost ? { servername: smtpHost } : undefined,
         auth: {
           user: smtpUser,
           pass: smtpPass
@@ -290,10 +295,20 @@ const handleSubmit = async (request) => {
     const smtp = await sendWithSmtp({ assessment, photos, to, from, html, subject, replyTo });
     return smtp.response;
   } catch (error) {
+    const smtpHint = [
+      "Confira SMTP_USER, SMTP_PASS e FORM_FROM_EMAIL na Vercel.",
+      "Para iCloud, use senha especifica de app da Apple, nao a senha normal do Apple ID.",
+      "Depois de alterar variaveis, faca um novo redeploy de producao."
+    ].join(" ");
+
     return json(502, {
       ok: false,
       error: "Falha ao enviar o e-mail.",
-      detail: error.message
+      detail: error.response || error.message || "Erro SMTP sem detalhe retornado.",
+      code: error.code || "",
+      command: error.command || "",
+      responseCode: error.responseCode || "",
+      hint: smtpHint
     });
   }
 };

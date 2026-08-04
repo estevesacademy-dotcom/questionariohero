@@ -61,10 +61,17 @@ Para iCloud:
 SMTP_HOST = smtp.mail.me.com
 SMTP_PORT = 587
 SMTP_SECURE = false
+SMTP_REQUIRE_TLS = true
 SMTP_USER = seuemail@icloud.com
 SMTP_PASS = senha especifica de app da Apple
 FORM_TO_EMAIL = marcosestevees@icloud.com
 FORM_FROM_EMAIL = Consultoria H.E.R.O. <seuemail@icloud.com>
+
+No iCloud:
+- SMTP_USER precisa ser o e-mail completo, por exemplo marcosestevees@icloud.com
+- SMTP_PASS precisa ser a senha especifica de app gerada em account.apple.com
+- FORM_FROM_EMAIL precisa usar o mesmo e-mail do SMTP_USER
+- Nao coloque aspas nas variaveis da Vercel
 
 Para Outlook/Hotmail:
 
