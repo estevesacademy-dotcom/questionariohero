@@ -143,7 +143,7 @@ const buildAttachments = (assessment, photos) => {
   return attachments;
 };
 
-const sendWithGoogleAppsScript = async ({ assessment, photos, to, html, subject, replyTo }) => {
+const sendWithGoogleAppsScript = async ({ assessment, photos, to, cc, bcc, html, subject, replyTo }) => {
   const scriptUrl = cleanEnvValue(process.env.GOOGLE_SCRIPT_URL || "");
   if (!scriptUrl) return { configured: false };
 
@@ -167,6 +167,8 @@ const sendWithGoogleAppsScript = async ({ assessment, photos, to, html, subject,
     body: JSON.stringify({
       secret: scriptSecret,
       to,
+      cc,
+      bcc,
       subject,
       html,
       replyTo,
@@ -201,7 +203,13 @@ const sendWithGoogleAppsScript = async ({ assessment, photos, to, html, subject,
       ok: true,
       provider: "google-apps-script",
       sentTo: to,
-      photosAttached: photos.length
+      photosAttached: photos.length,
+      saved: result.saved === true,
+      emailSent: result.emailSent === true,
+      emailError: result.emailError || "",
+      spreadsheetUrl: result.spreadsheetUrl || "",
+      folderUrl: result.folderUrl || "",
+      remainingDailyQuota: result.remainingDailyQuota
     })
   };
 };
@@ -345,6 +353,8 @@ const handleSubmit = async (request) => {
   }
 
   const to = process.env.FORM_TO_EMAIL || DEFAULT_TO_EMAIL;
+  const cc = process.env.FORM_CC_EMAIL || "";
+  const bcc = process.env.FORM_BCC_EMAIL || "";
   const from = process.env.FORM_FROM_EMAIL || DEFAULT_FROM_EMAIL;
   const studentName = assessment.personalData?.name || "Aluno H.E.R.O.";
   const replyTo = assessment.personalData?.email || undefined;
@@ -352,7 +362,7 @@ const handleSubmit = async (request) => {
   const html = buildEmailHtml(assessment, photos);
 
   try {
-    const googleScript = await sendWithGoogleAppsScript({ assessment, photos, to, html, subject, replyTo });
+    const googleScript = await sendWithGoogleAppsScript({ assessment, photos, to, cc, bcc, html, subject, replyTo });
     if (googleScript.configured) return googleScript.response;
 
     const resend = await sendWithResend({ assessment, photos, to, from, html, subject, replyTo });
